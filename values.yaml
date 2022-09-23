@@ -814,3 +814,47 @@ worker:
   #  - name: init-myservice
   #    image: busybox
   #    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+
+  backup:
+    enabled: true
+    existingConfigSecret: ""
+    image: 
+      name: "bb3vis/borgmatic"
+      tag: "latest"
+    cronjob:
+      name: "backup-borgmatic"
+    container:
+      name: "borgmatic"
+    config:
+      location:
+        source_directories:
+            - "/opt/netbox/netbox/media"
+        repositories: []
+            # - ssh://user@backupserver/./sourcehostname.borg
+            # - ssh://user@backupserver/./{fqdn}
+            # - /var/local/backups/local.borg    
+        storage:
+            compression: lz4
+            archive_name_format: 'backup-{now}'
+        retention:
+            keep_hourly: 0
+            keep_daily: 7
+            keep_weekly: 4
+            keep_monthly: 12
+            keep_yearly: 1
+            prefix: 'backup-'
+      consistency:
+          checks:
+              - repository
+              - archives
+          check_last: 3
+          prefix: 'backup-'
+      hooks:
+          postgresql_databases:
+              - name: netbox
+                hostname: localhost
+                port: 5432
+                username: netbox
+                password: ""
+                format: tar
+                
