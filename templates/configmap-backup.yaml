@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "netbox.fullname" . }}-backup
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ include "netbox.labels" . | indent 4 }}
+data:
+  borgmatic-start.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    export PATH="/usr/bin:${PATH}"
+    BORG_INIT_IF_NOT_EXISTS="${BORG_INIT_IF_NOT_EXISTS:-false}"
+    BORG_INIT_ENCRYPTION="${BORG_INIT_ENCRYPTION:-repokey}"
+
+    die() {
+        echo "${@}" >&2
+        exit 1
+    }
+
+    diecat() {
+        cat >&2
+        exit 1
+    }
+
+    # Check if config file exists:
+    [ -r /etc/borgmatic.d/config.yaml ] || die "Unable to load the config! Exiting."
+
+    # Check if some keys are passed as Docker secrets:
+    if [ -r /run/secrets/ssh-key ]; then
+        echo "Docker secret with an SSH private key found!"
+        SSH_KEYTYPE="$(ssh-keygen -lf /run/secrets/ssh-key | awk 'a = gensub(/[\(\)]/, "", "g", $NF) {print tolower(a)}')"
+        echo "The SSH key type is: \"${SSH_KEYTYPE}\""
+        cp -v /run/secrets/ssh-key "/root/.ssh/id_${SSH_KEYTYPE}"
+        chown -v root:root "/root/.ssh/id_${SSH_KEYTYPE}"
+        chmod -v 0600 "/root/.ssh/id_${SSH_KEYTYPE}"
+    fi
+    if [ -r /run/secrets/ssh-known-hosts ]; then
+        echo "Docker secret with an SSH known host keys found!"
+        cp -v /run/secrets/ssh-known-hosts /root/.ssh/known_hosts
+        chown -v root:root /root/.ssh/known_hosts
+        chmod -v 0600 /root/.ssh/known_hosts
+    fi
+    if [ -r /run/secrets/repo-key ]; then
+        echo "Docker secret with a Borg repo key found!"
+        cp /run/secrets/repo-key /root/.config/borg/keyfile
+        chown root:root /root/.config/borg/keyfile
+        chmod 0600 /root/.config/borg/keyfile
+    fi
+
+    # Check if the repo actually exists:
+    if /usr/bin/borgmatic check --only repository -v 0 ; then
+        echo "Repository found!"
+    else
+        if [ "${BORG_INIT_IF_NOT_EXISTS}" = 'true' ]; then
+            /usr/bin/borgmatic init --encryption "${BORG_INIT_ENCRYPTION}"
+        else
+            diecat <<EOF
+    Couldn't find or check the repository. Does it exist?
+    If not, create the repo first:
+        /usr/bin/borgmatic init --encryption {repokey|keyfile}[-blake2]
+    Then start the image manually and run:
+        /usr/bin/borgmatic create --progress --stats
+    to initialize it.
+    If you're sure it exists and should be available, run:
+        /usr/bin/borgmatic check --progress [--repair]
+
+    CAUTION: Do not run "--repair" unless you know what you're doing!
+    EOF
+        fi
+    fi
+
+    # Start in cron mode if crontab exists,
+    # otherwise start Borgmatic as a one-shot job:
+    if [ -r /etc/borgmatic.d/crontab.txt ]; then
+        echo 'Crontab found! Importing...'
+        # Import your cron file
+        /usr/bin/crontab /etc/borgmatic.d/crontab.txt
+        echo 'Imported crontab successfully. Starting `crond`.'
+        # Start cron
+        /usr/sbin/crond -f -L /dev/stdout
+    else
+        echo 'No crontab found! Starting `borgmatic` in a one-job mode.'
+        # Start a one-shot job:
+        /usr/bin/borgmatic --stats -v 0
+    fi

@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.backup.cronjob.name }}
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: {{ .Values.backup.container.name }}
+            image: {{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}
+            imagePullPolicy: IfNotPresent
+            command: ["/configmap/borgmatic-start.sh"]
+          restartPolicy: OnFailure
+          volumeMounts:
+            - name: config
+              mountPath: /etc/borgmatic.d/config.yaml
+              subPath: config.yaml
+              readOnly: true
+          volumes:
+            - name: configmap
+              configMap:
+                name: {{ include "netbox.fullname" . }}-backup
