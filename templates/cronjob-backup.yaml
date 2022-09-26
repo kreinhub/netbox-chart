@@ -9,17 +9,37 @@ spec:
       template:
         spec:
           containers:
-          - name: {{ .Values.backup.container.name }}
+          - name: "borgmatic"
             image: {{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}
             imagePullPolicy: IfNotPresent
-            command: ["/configmap/borgmatic-start.sh"]
+            command: ["/opt/netbox/netbox/borgmatic-start.sh"]
           restartPolicy: OnFailure
           volumeMounts:
+            - name: script
+              mountPath: /opt/netbox/netbox/borgmatic-start.sh
+              subPath: borgmatic-start.sh
+              readOnly: true
             - name: config
               mountPath: /etc/borgmatic.d/config.yaml
               subPath: config.yaml
               readOnly: true
+            - name: media
+              mountPath: /opt/netbox/netbox/media
+              subPath: {{ .Values.persistence.subPath | default "" | quote }}
+              readOnly: true
           volumes:
-            - name: configmap
+            - name: config
+              secret:
+                secretName: {{ .Values.backup.config | default (printf "%s-backup-config" (include "netbox.fullname" .)) }}
+                optional: false
+            - name: script
               configMap:
-                name: {{ include "netbox.fullname" . }}-backup
+                name: {{ include "netbox.fullname" . }}-backup-script
+            - name: media
+              {{- if .Values.persistence.enabled }}
+              persistentVolumeClaim:
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-media" (include "netbox.fullname" .)) }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            
