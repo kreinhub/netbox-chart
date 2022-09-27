@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Values.backup.cronjob.name }}
+  name: "backup-borgmatic"
 spec:
-  schedule: "0 0 * * *"
+  schedule: {{ .Values.backup.cronSchedule | default "* * * * *" }}
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name: "borgmatic"
-            image: {{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}
+            image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
             imagePullPolicy: IfNotPresent
             command: ["/opt/netbox/netbox/borgmatic-start.sh"]
           restartPolicy: OnFailure
@@ -30,7 +30,7 @@ spec:
           volumes:
             - name: config
               secret:
-                secretName: {{ .Values.backup.config | default (printf "%s-backup-config" (include "netbox.fullname" .)) }}
+                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-config" (include "netbox.fullname" .)) }}
                 optional: false
             - name: script
               configMap:
