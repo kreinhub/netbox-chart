@@ -1,3 +1,4 @@
+{{- if .Values.backup.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -88,3 +89,4 @@ data:
         # Start a one-shot job:
         /usr/bin/borgmatic --stats -v 0
     fi
+{{- end }}

@@ -816,7 +816,7 @@ worker:
   #    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
 
 backup:
-  enabled: true
+  enabled: false
   existingConfigSecret: ""
   image: 
     name: "bb3vis/borgmatic"
