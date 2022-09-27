@@ -822,6 +822,7 @@ backup:
     name: "bb3vis/borgmatic"
     tag: "latest"
   cronSchedule: "0 0 * * *"
+  restartPolicy: OnFailure
   config:
     location:
       source_directories:

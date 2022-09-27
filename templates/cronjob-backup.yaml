@@ -13,20 +13,19 @@ spec:
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
             imagePullPolicy: IfNotPresent
             command: ["/opt/netbox/netbox/borgmatic-start.sh"]
-          restartPolicy: OnFailure
-          volumeMounts:
-            - name: script
-              mountPath: /opt/netbox/netbox/borgmatic-start.sh
-              subPath: borgmatic-start.sh
-              readOnly: true
-            - name: config
-              mountPath: /etc/borgmatic.d/config.yaml
-              subPath: config.yaml
-              readOnly: true
-            - name: media
-              mountPath: /opt/netbox/netbox/media
-              subPath: {{ .Values.persistence.subPath | default "" | quote }}
-              readOnly: true
+            volumeMounts:
+              - name: script
+                mountPath: /opt/netbox/netbox/borgmatic-start.sh
+                subPath: borgmatic-start.sh
+                readOnly: true
+              - name: config
+                mountPath: /etc/borgmatic.d/config.yaml
+                subPath: config.yaml
+                readOnly: true
+              - name: media
+                mountPath: /opt/netbox/netbox/media
+                subPath: {{ .Values.persistence.subPath | default "" | quote }}
+                readOnly: true
           volumes:
             - name: config
               secret:
@@ -42,4 +41,4 @@ spec:
               {{- else }}
               emptyDir: {}
               {{- end }}
-            
+          restartPolicy: {{ .Values.backup.restartPolicy }}
