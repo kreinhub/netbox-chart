@@ -1,7 +1,13 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "backup-borgmatic"
+  name: {{ include "netbox.fullname" . }}-backup-borgmatic
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ include "netbox.labels" . | indent 4 }}
 spec:
   schedule: {{ .Values.backup.cronSchedule | default "* * * * *" }}
   jobTemplate:
@@ -42,3 +48,4 @@ spec:
               emptyDir: {}
               {{- end }}
           restartPolicy: {{ .Values.backup.restartPolicy }}
+          
