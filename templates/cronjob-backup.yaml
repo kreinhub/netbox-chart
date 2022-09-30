@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "netbox.fullname" . }}-backup-borgmatic
+  name: {{ include "netbox.fullname" . }}-backup
   {{- with .Values.commonAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -25,6 +25,10 @@ spec:
               - name: reports
                 mountPath: /opt/netbox/netbox/reports
                 subPath: {{ .Values.reportsPersistence.subPath | default "" | quote }}
+              - name: media
+                mountPath: /opt/netbox/netbox/media
+                subPath: {{ .Values.persistence.subPath | default "" | quote }}
+                readOnly: true
               {{- end }}
               - name: script
                 mountPath: /usr/local/bin/borgmatic-start.sh
@@ -33,10 +37,6 @@ spec:
               - name: config
                 mountPath: /etc/borgmatic.d/config.yaml
                 subPath: config.yaml
-                readOnly: true
-              - name: media
-                mountPath: /opt/netbox/netbox/media
-                subPath: {{ .Values.persistence.subPath | default "" | quote }}
                 readOnly: true
               - name: sshKey
                 mountPath: /run/secrets/ssh-key
