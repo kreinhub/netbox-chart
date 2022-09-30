@@ -845,7 +845,7 @@ backup:
   sshKey: ""
   sshKnownHosts: []
   borgPassphrase: ""
-  config:
+  config: |+
     location:
       source_directories:
           - "/opt/netbox/netbox/media"
