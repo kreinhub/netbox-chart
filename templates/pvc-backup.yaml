@@ -28,7 +28,7 @@ spec:
 {{- end -}}
 
 ---
-{{- if and .Values.backup.enabled -}}
+{{- if .Values.backup.enabled -}}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

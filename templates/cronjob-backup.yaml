@@ -67,7 +67,7 @@ spec:
                     name: {{ include "netbox.postgresql.secret" . | quote }}
                     key: {{ include "netbox.postgresql.secretKey" . | quote }}
                     optional: false
-              {{- if (eq "repokey" .Values.backup.newRepoEncryptionType) }}
+              {{- if (eq "repokey" .Values.backup.RepoEncryptionType) }}
               - name: BORG_PASSPHRASE
                 valueFrom:
                   secretKeyRef:
@@ -85,7 +85,7 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     name: {{ include "netbox.fullname" . }}-backup-secret
-                    key: newRepoEncryptionType
+                    key: RepoEncryptionType
                     optional: false
           volumes:
             - name: config
@@ -104,7 +104,7 @@ spec:
               {{- else }}
               emptyDir: {}
               {{- end }}
-            - name: backupCache
+            - name: reports
               {{- if .Values.persistence.enabled }}
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "netbox.fullname" .)) }}
@@ -137,7 +137,7 @@ spec:
                 items:
                 - key: sshKnownHosts
                 optional: true
-            {{- if (eq "keyfile" .Values.backup.newRepoEncryptionType) }}
+            {{- if (eq "keyfile" .Values.backup.RepoEncryptionType) }}
             - name: repoKey
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
