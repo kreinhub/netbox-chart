@@ -1,0 +1,28 @@
+{{- if and .Values.backup.enabled (.Values.backup.persistence.blockCache.enabled) -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "netbox.fullname" . }}-backupCache
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ include "netbox.labels" . | indent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.backup.persistence.blockCache.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ required "Size value is required" .Values.backup.persistence.blockCache.size | quote }}
+{{- if .Values.backup.persistence.blockCache.storageClass }}
+{{- if (eq "-" .Values.backup.persistence.blockCache.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: {{ .Values.backup.persistence.blockCache.storageClass | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.backup.persistence.blockCache.selector }}
+  selector: {{ toYaml .Values.backup.persistence.blockCache.selector | nindent 4 }}
+{{- end }}
+{{- end -}}
