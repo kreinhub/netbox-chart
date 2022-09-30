@@ -44,9 +44,9 @@ data:
         chown -v root:root /root/.ssh/known_hosts
         chmod -v 0600 /root/.ssh/known_hosts
     fi
-    if [ -r /run/secrets/repo-key ]; then
+    if [ -r /run/secrets/detached-key ]; then
         echo "Docker secret with a Borg repo key found!"
-        cp /run/secrets/repo-key /root/.config/borg/keyfile
+        cp /run/secrets/detached-key /root/.config/borg/keyfile
         chown root:root /root/.config/borg/keyfile
         chmod 0600 /root/.config/borg/keyfile
     fi

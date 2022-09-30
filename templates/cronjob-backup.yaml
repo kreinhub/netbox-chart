@@ -46,9 +46,9 @@ spec:
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
                 readOnly: true
-              - name: repoKey
-                mountPath: /run/secrets/repo-key
-                subPath: repo-key
+              - name: detachedKey
+                mountPath: /run/secrets/detached-key
+                subPath: detached-key
                 readOnly: true
               {{- if .Values.backup.persistence.blockCache.enabled  }}
               - name: backupCache
@@ -59,7 +59,7 @@ spec:
               {{- if .Values.backup.persistence.localRepo.enabled  }}
               - name: backupLocal
                 mountPath:  /mnt/borgmatic
-                subPath: repo-key
+                subPath: borgmatic
                 readOnly: true
               {{- end }}
             env:
@@ -140,11 +140,11 @@ spec:
                 - key: sshKnownHosts
                 optional: true
             {{- if (eq "keyfile" .Values.backup.repoEncryptionType) }}
-            - name: repoKey
+            - name: detachedKey
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
-                - key: repoKey
+                - key: detachedKey
                 optional: false
             {{- end }}
           restartPolicy: {{ .Values.backup.restartPolicy }}

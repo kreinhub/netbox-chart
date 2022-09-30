@@ -841,7 +841,7 @@ backup:
   restartPolicy: OnFailure
   allowRepoCreation: false
   repoEncryptionType: "repokey"
-  repoKey: ""
+  detachedKey: ""
   sshKey: ""
   sshKnownHosts: []
   borgPassphrase: ""
