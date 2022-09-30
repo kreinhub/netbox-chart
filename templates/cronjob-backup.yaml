@@ -54,7 +54,7 @@ spec:
                 mountPath: /root/.cache/borg
                 subPath: borg
                 readOnly: true
-              {{- if .Values.backup.config.repositories  }}
+              {{- if .Values.backup.useLocalBackup  }}
               - name: backupLocal
                 mountPath:  /mnt/borgmatic
                 subPath: repo-key

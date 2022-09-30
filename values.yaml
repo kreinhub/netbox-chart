@@ -817,6 +817,7 @@ worker:
 
 backup:
   enabled: false
+  useLocalBackup: false
   existingConfigSecret: ""
   image: 
     name: "bb3vis/borgmatic"
