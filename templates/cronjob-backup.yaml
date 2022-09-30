@@ -73,7 +73,7 @@ spec:
               - name: BORG_PASSPHRASE
                 valueFrom:
                   secretKeyRef:
-                    secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                    name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                     key: borgPassphrase
                     optional: false
               {{- end }}

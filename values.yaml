@@ -840,7 +840,7 @@ backup:
   cronSchedule: ""
   restartPolicy: OnFailure
   allowRepoCreation: false
-  repoEncryptionType: "repokey"
+  repoEncryptionType: ""
   detachedKey: ""
   sshKey: ""
   sshKnownHosts: []
