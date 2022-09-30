@@ -1,4 +1,4 @@
-{{- if and .Values.backup.enabled (.Values.backup.useLocalBackup) -}}
+{{- if and .Values.backup.enabled (.Values.backup.persistence.localRepo.enabled) -}}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -11,24 +11,24 @@ metadata:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
   accessModes:
-    - {{ .Values.persistence.accessMode | quote }}
+    - {{ .Values.backup.persistence.localRepo.accessMode | quote }}
   resources:
     requests:
-      storage: {{ .Values.persistence.size | quote }}
-{{- if .Values.persistence.storageClass }}
-{{- if (eq "-" .Values.persistence.storageClass) }}
+      storage: {{ required "Size value is required" .Values.backup.persistence.localRepo.size | quote }}
+{{- if .Values.backup.persistence.localRepo.storageClass }}
+{{- if (eq "-" .Values.backup.persistence.localRepo.storageClass) }}
   storageClassName: ""
 {{- else }}
-  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  storageClassName: {{ .Values.backup.persistence.localRepo.storageClass | quote }}
 {{- end }}
 {{- end }}
-{{- if .Values.persistence.selector }}
-  selector: {{ toYaml .Values.persistence.selector | nindent 4 }}
+{{- if .Values.backup.persistence.localRepo.selector }}
+  selector: {{ toYaml .Values.backup.persistence.localRepo.selector | nindent 4 }}
 {{- end }}
 {{- end -}}
 
 ---
-{{- if .Values.backup.enabled -}}
+{{- if and .Values.backup.enabled (.Values.backup.persistence.blockCache.enabled) -}}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -41,18 +41,18 @@ metadata:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
   accessModes:
-    - {{ .Values.persistence.accessMode | quote }}
+    - {{ .Values.backup.persistence.blockCache.accessMode | quote }}
   resources:
     requests:
-      storage: {{ .Values.persistence.size | quote }}
-{{- if .Values.persistence.storageClass }}
-{{- if (eq "-" .Values.persistence.storageClass) }}
+      storage: {{ required "Size value is required" .Values.backup.persistence.blockCache.size | quote }}
+{{- if .Values.backup.persistence.blockCache.storageClass }}
+{{- if (eq "-" .Values.backup.persistence.blockCache.storageClass) }}
   storageClassName: ""
 {{- else }}
-  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  storageClassName: {{ .Values.backup.persistence.blockCache.storageClass | quote }}
 {{- end }}
 {{- end }}
-{{- if .Values.persistence.selector }}
-  selector: {{ toYaml .Values.persistence.selector | nindent 4 }}
+{{- if .Values.backup.persistence.blockCache.selector }}
+  selector: {{ toYaml .Values.backup.persistence.blockCache.selector | nindent 4 }}
 {{- end }}
 {{- end -}}

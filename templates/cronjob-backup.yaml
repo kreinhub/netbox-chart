@@ -50,11 +50,13 @@ spec:
                 mountPath: /run/secrets/repo-key
                 subPath: repo-key
                 readOnly: true
+              {{- if .Values.backup.persistence.blockCache.enabled  }}
               - name: backupCache
                 mountPath: /root/.cache/borg
                 subPath: borg
                 readOnly: true
-              {{- if .Values.backup.useLocalBackup  }}
+              {{- end }}
+              {{- if .Values.backup.persistence.localRepo.enabled  }}
               - name: backupLocal
                 mountPath:  /mnt/borgmatic
                 subPath: repo-key
@@ -112,14 +114,14 @@ spec:
               emptyDir: {}
               {{- end }}
             - name: backupCache
-              {{- if .Values.persistence.enabled }}
+              {{- if .Values.backup.persistence.blockCache.enabled }}
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backupCache" (include "netbox.fullname" .)) }}
               {{- else }}
               emptyDir: {}
               {{- end }}
             - name: backupLocal
-              {{- if .Values.persistence.enabled }}
+              {{- if .Values.backup.persistence.localRepo.enabled }}
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backupLocal" (include "netbox.fullname" .)) }}
               {{- else }}

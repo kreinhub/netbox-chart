@@ -817,7 +817,21 @@ worker:
 
 backup:
   enabled: false
-  useLocalBackup: false
+  persistence:
+    localRepo:
+      enabled: false
+      existingClaim: ""
+      subPath: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: ""
+    blockCache:
+      enabled: false
+      existingClaim: ""
+      subPath: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: ""
   existingConfigSecret: ""
   image: 
     name: "bb3vis/borgmatic"
@@ -857,7 +871,7 @@ backup:
         prefix: 'backup-'
     hooks:
       postgresql_databases:
-        {{ if .Values.postgresql.enabled -}}
+        {{- if .Values.postgresql.enabled }}
         - name: {{ .Values.postgresql.postgresqlDatabase | quote }}
           hostname: {{ include "netbox.postgresql.fullname" . | quote }}
           port: {{ .Values.postgresql.service.port | int }}
