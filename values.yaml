@@ -821,8 +821,15 @@ backup:
   image: 
     name: "bb3vis/borgmatic"
     tag: "latest"
-  cronSchedule: "0 0 * * *"
+    pullPolicy: IfNotPresent 
+  cronSchedule: ""
   restartPolicy: OnFailure
+  allowRepoCreation: false
+  newRepoEncryptionType: "repokey"
+  repoKey: ""
+  sshKey: ""
+  sshKnownHosts: []
+  borgPassphrase: ""
   config:
     location:
       source_directories:
@@ -848,11 +855,17 @@ backup:
         check_last: 3
         prefix: 'backup-'
     hooks:
-        postgresql_databases:
-            - name: netbox
-              hostname: localhost
-              port: 5432
-              username: netbox
-              password: ""
-              format: tar
-              
+      postgresql_databases:
+        {{ if .Values.postgresql.enabled -}}
+        - name: {{ .Values.postgresql.postgresqlDatabase | quote }}
+          hostname: {{ include "netbox.postgresql.fullname" . | quote }}
+          port: {{ .Values.postgresql.service.port | int }}
+          username: {{ .Values.postgresql.postgresqlUsername | quote }}
+        {{- else -}}
+        - name: {{ .Values.externalDatabase.database | quote }}
+          hostname: {{ .Values.externalDatabase.host | quote }}
+          port: {{ .Values.externalDatabase.port | int }}
+          username: {{ .Values.externalDatabase.username | quote }}
+        {{- end }}
+          password: ${PGPASSWORD}
+          format: tar

@@ -11,12 +11,10 @@ metadata:
 {{ include "netbox.labels" . | indent 4 }}
 data:
   borgmatic-start.sh: |
-    #!/usr/bin/env bash
+    #!/usr/bin/env ash
     set -euo pipefail
 
     export PATH="/usr/bin:${PATH}"
-    BORG_INIT_IF_NOT_EXISTS="${BORG_INIT_IF_NOT_EXISTS:-false}"
-    BORG_INIT_ENCRYPTION="${BORG_INIT_ENCRYPTION:-repokey}"
 
     die() {
         echo "${@}" >&2
@@ -75,18 +73,6 @@ data:
         fi
     fi
 
-    # Start in cron mode if crontab exists,
-    # otherwise start Borgmatic as a one-shot job:
-    if [ -r /etc/borgmatic.d/crontab.txt ]; then
-        echo 'Crontab found! Importing...'
-        # Import your cron file
-        /usr/bin/crontab /etc/borgmatic.d/crontab.txt
-        echo 'Imported crontab successfully. Starting `crond`.'
-        # Start cron
-        /usr/sbin/crond -f -L /dev/stdout
-    else
-        echo 'No crontab found! Starting `borgmatic` in a one-job mode.'
-        # Start a one-shot job:
-        /usr/bin/borgmatic --stats -v 0
-    fi
+    /usr/bin/borgmatic --stats -v 0
+    
 {{- end }}

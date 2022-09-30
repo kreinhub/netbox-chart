@@ -10,7 +10,7 @@ metadata:
   labels:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
-  schedule: {{ .Values.backup.cronSchedule | default "* * * * *" }}
+  schedule: {{ required "Cron schedule is required" .Values.backup.cronSchedule }}
   jobTemplate:
     spec:
       template:
@@ -18,11 +18,16 @@ spec:
           containers:
           - name: "borgmatic"
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
-            imagePullPolicy: IfNotPresent
-            command: ["/opt/netbox/netbox/borgmatic-start.sh"]
+            imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+            command: ["/usr/local/bin/borgmatic-start.sh"]
             volumeMounts:
+              {{- if .Values.reportsPersistence.enabled }}
+              - name: reports
+                mountPath: /opt/netbox/netbox/reports
+                subPath: {{ .Values.reportsPersistence.subPath | default "" | quote }}
+              {{- end }}
               - name: script
-                mountPath: /opt/netbox/netbox/borgmatic-start.sh
+                mountPath: /usr/local/bin/borgmatic-start.sh
                 subPath: borgmatic-start.sh
                 readOnly: true
               - name: config
@@ -33,10 +38,61 @@ spec:
                 mountPath: /opt/netbox/netbox/media
                 subPath: {{ .Values.persistence.subPath | default "" | quote }}
                 readOnly: true
+              - name: sshKey
+                mountPath: /run/secrets/ssh-key
+                subPath: ssh-key
+                readOnly: true
+              - name: sshKnownHosts
+                mountPath: /run/secrets/ssh-known-hosts
+                subPath: ssh-known-hosts
+                readOnly: true
+              - name: repoKey
+                mountPath: /run/secrets/repo-key
+                subPath: repo-key
+                readOnly: true
+              - name: backupCache
+                mountPath: /root/.cache/borg
+                subPath: borg
+                readOnly: true
+              {{- if .Values.backup.config.repositories  }}
+              - name: backupLocal
+                mountPath:  /mnt/borgmatic
+                subPath: repo-key
+                readOnly: true
+              {{- end }}
+            env:
+              - name: PGPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "netbox.postgresql.secret" . | quote }}
+                    key: {{ include "netbox.postgresql.secretKey" . | quote }}
+                    optional: false
+              {{- if (eq "repokey" .Values.backup.newRepoEncryptionType) }}
+              - name: BORG_PASSPHRASE
+                valueFrom:
+                  secretKeyRef:
+                    secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                    key: borgPassphrase
+                    optional: false
+              {{- end }}
+              - name: BORG_INIT_IF_NOT_EXISTS
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "netbox.fullname" . }}-backup-secret
+                    key: allowRepoCreation
+                    optional: false
+              - name: BORG_INIT_ENCRYPTION
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "netbox.fullname" . }}-backup-secret
+                    key: newRepoEncryptionType
+                    optional: false
           volumes:
             - name: config
               secret:
-                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-config" (include "netbox.fullname" .)) }}
+                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                items:
+                - key: config.yaml
                 optional: false
             - name: script
               configMap:
@@ -48,5 +104,47 @@ spec:
               {{- else }}
               emptyDir: {}
               {{- end }}
+            - name: backupCache
+              {{- if .Values.persistence.enabled }}
+              persistentVolumeClaim:
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "netbox.fullname" .)) }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            - name: backupCache
+              {{- if .Values.persistence.enabled }}
+              persistentVolumeClaim:
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backupCache" (include "netbox.fullname" .)) }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            - name: backupLocal
+              {{- if .Values.persistence.enabled }}
+              persistentVolumeClaim:
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backupLocal" (include "netbox.fullname" .)) }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            - name: sshKey
+              secret:
+                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                items:
+                - key: sshKey
+                optional: true
+            - name: sshKnownHosts
+              secret:
+                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                items:
+                - key: sshKnownHosts
+                optional: true
+            {{- if (eq "keyfile" .Values.backup.newRepoEncryptionType) }}
+            - name: repoKey
+              secret:
+                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                items:
+                - key: repoKey
+                optional: false
+            {{- end }}
           restartPolicy: {{ .Values.backup.restartPolicy }}
+          concurrencyPolicy: Forbid
 {{- end }}
