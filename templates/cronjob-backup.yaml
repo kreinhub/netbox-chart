@@ -46,10 +46,6 @@ spec:
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
                 readOnly: true
-              - name: detachedKey
-                mountPath: /run/secrets/detached-key
-                subPath: detached-key
-                readOnly: true
               {{- if .Values.backup.persistence.blockCache.enabled  }}
               - name: backupCache
                 mountPath: /root/.cache/borg
@@ -60,6 +56,10 @@ spec:
               - name: backupLocal
                 mountPath:  /mnt/borgmatic
                 subPath: borgmatic
+                readOnly: true
+              - name: detachedKey
+                mountPath: /run/secrets/detached-key
+                subPath: detached-key
                 readOnly: true
               {{- end }}
             env:
