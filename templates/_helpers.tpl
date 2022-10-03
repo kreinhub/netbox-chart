@@ -221,3 +221,14 @@ Usage:
         {{- tpl (.value | toYaml) .context }}
     {{- end }}
 {{- end -}}
+
+{{/*
+Renders a list of ssh known hosts to a string
+Usage:
+{{ include "netbox.knownhosts.render ." | b64enc | quote }}
+*/}}
+{{- define "netbox.knownhosts.render" -}}
+  {{- range .Values.backup.sshKnownHosts -}}
+    {{ . }}
+  {{- end -}}
+{{- end -}}
