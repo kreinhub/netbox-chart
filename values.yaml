@@ -834,7 +834,7 @@ backup:
       size: ""
   existingConfigSecret: ""
   image: 
-    name: "bb3vis/borgmatic"
+    name: "b3vis/borgmatic"
     tag: "latest"
     pullPolicy: IfNotPresent 
   cronSchedule: ""
@@ -884,4 +884,3 @@ backup:
         {{- end }}
           password: ${PGPASSWORD}
           format: tar
-          
