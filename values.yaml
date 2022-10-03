@@ -840,7 +840,7 @@ backup:
   cronSchedule: ""
   restartPolicy: OnFailure
   allowRepoCreation: "false"  # it should be a string
-  repoEncryptionType: ""
+  repoEncryptionType: ""      # possible options: none, authenticated[-blake2], keyfile[-blake2], repokey[-blake2]
   detachedKey: ""
   sshKey: ""
   sshKnownHosts: []
@@ -884,3 +884,4 @@ backup:
         {{- end }}
           password: ${PGPASSWORD}
           format: tar
+          
