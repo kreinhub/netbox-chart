@@ -10,7 +10,7 @@ metadata:
   labels:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
-  schedule: {{ required "Cron schedule is required" .Values.backup.cronSchedule }}
+  schedule: {{ required "Cron schedule is required" .Values.backup.cronSchedule | quote }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
