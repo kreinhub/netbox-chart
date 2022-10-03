@@ -102,8 +102,8 @@ spec:
             - name: script
               configMap:
                 name: {{ include "netbox.fullname" . }}-backup-script
-            - name: media
               {{- if .Values.persistence.enabled }}
+            - name: media
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-media" (include "netbox.fullname" .)) }}
               {{- else }}
@@ -116,15 +116,15 @@ spec:
               {{- else }}
               emptyDir: {}
               {{- end }}
-            - name: backup-cache
               {{- if .Values.backup.persistence.blockCache.enabled }}
+            - name: backup-cache
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-cache" (include "netbox.fullname" .)) }}
               {{- else }}
               emptyDir: {}
               {{- end }}
-            - name: backup-local
               {{- if .Values.backup.persistence.localRepo.enabled }}
+            - name: backup-local
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-local" (include "netbox.fullname" .)) }}
               {{- else }}
