@@ -1,4 +1,4 @@
-{{- if and .Values.backup.enabled (.Values.backup.persistence.blockCache.enabled) -}}
+{{- if and .Values.backup.enabled (.Values.backup.persistence.blockCache.enabled) (not .Values.persistence.existingClaim) }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
