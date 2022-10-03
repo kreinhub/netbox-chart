@@ -839,7 +839,7 @@ backup:
     pullPolicy: IfNotPresent 
   cronSchedule: ""
   restartPolicy: OnFailure
-  allowRepoCreation: false
+  allowRepoCreation: "false"  # it should be a string
   repoEncryptionType: ""
   detachedKey: ""
   sshKey: ""
