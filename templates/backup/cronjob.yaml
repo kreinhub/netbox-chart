@@ -11,6 +11,7 @@ metadata:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
   schedule: {{ required "Cron schedule is required" .Values.backup.cronSchedule }}
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
@@ -57,10 +58,12 @@ spec:
                 mountPath:  /mnt/borgmatic
                 subPath: borgmatic
                 readOnly: true
+              {{- if (eq "keyfile" .Values.backup.repoEncryptionType) }}
               - name: detached-key
                 mountPath: /run/secrets/detached-key
                 subPath: detached-key
                 readOnly: true
+              {{- end }}
               {{- end }}
             env:
               - name: PGPASSWORD
@@ -95,6 +98,7 @@ spec:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: config.yaml
+                  path: config.yaml
                 optional: false
             - name: script
               configMap:
@@ -132,12 +136,14 @@ spec:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: sshKey
+                  path: ssh-key
                 optional: true
             - name: ssh-known-hosts
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: sshKnownHosts
+                  path: ssh-known-hosts
                 optional: true
             {{- if (eq "keyfile" .Values.backup.repoEncryptionType) }}
             - name: detached-key
@@ -145,8 +151,8 @@ spec:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: detachedKey
+                  path: detached-key
                 optional: false
             {{- end }}
           restartPolicy: {{ .Values.backup.restartPolicy }}
-          concurrencyPolicy: Forbid
 {{- end }}
