@@ -38,26 +38,26 @@ spec:
                 mountPath: /etc/borgmatic.d/config.yaml
                 subPath: config.yaml
                 readOnly: true
-              - name: sshKey
+              - name: ssh-key
                 mountPath: /run/secrets/ssh-key
                 subPath: ssh-key
                 readOnly: true
-              - name: sshKnownHosts
+              - name: ssh-known-hosts
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
                 readOnly: true
               {{- if .Values.backup.persistence.blockCache.enabled  }}
-              - name: backupCache
+              - name: backup-cache
                 mountPath: /root/.cache/borg
                 subPath: borg
                 readOnly: true
               {{- end }}
               {{- if .Values.backup.persistence.localRepo.enabled  }}
-              - name: backupLocal
+              - name: backup-local
                 mountPath:  /mnt/borgmatic
                 subPath: borgmatic
                 readOnly: true
-              - name: detachedKey
+              - name: detached-key
                 mountPath: /run/secrets/detached-key
                 subPath: detached-key
                 readOnly: true
@@ -113,34 +113,34 @@ spec:
               {{- else }}
               emptyDir: {}
               {{- end }}
-            - name: backupCache
+            - name: backup-cache
               {{- if .Values.backup.persistence.blockCache.enabled }}
               persistentVolumeClaim:
-                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backupCache" (include "netbox.fullname" .)) }}
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-cache" (include "netbox.fullname" .)) }}
               {{- else }}
               emptyDir: {}
               {{- end }}
-            - name: backupLocal
+            - name: backup-local
               {{- if .Values.backup.persistence.localRepo.enabled }}
               persistentVolumeClaim:
-                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backupLocal" (include "netbox.fullname" .)) }}
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-local" (include "netbox.fullname" .)) }}
               {{- else }}
               emptyDir: {}
               {{- end }}
-            - name: sshKey
+            - name: ssh-key
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: sshKey
                 optional: true
-            - name: sshKnownHosts
+            - name: ssh-known-hosts
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: sshKnownHosts
                 optional: true
             {{- if (eq "keyfile" .Values.backup.repoEncryptionType) }}
-            - name: detachedKey
+            - name: detached-key
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
