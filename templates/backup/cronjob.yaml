@@ -1,4 +1,6 @@
 {{- if .Values.backup.enabled }}
+{{ $requiredDetachedKey := list "keyfile" "keyfile-blake2" }}
+{{ $requiredPassphrase := list "repokey" "repokey-blake2" "authenticated" "authenticated-blake2" }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -26,6 +28,9 @@ spec:
               - name: reports
                 mountPath: /opt/netbox/netbox/reports
                 subPath: {{ .Values.reportsPersistence.subPath | default "" | quote }}
+                readOnly: true
+              {{- end }}
+              {{- if .Values.persistence.enabled }}
               - name: media
                 mountPath: /opt/netbox/netbox/media
                 subPath: {{ .Values.persistence.subPath | default "" | quote }}
@@ -47,23 +52,17 @@ spec:
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
                 readOnly: true
-              {{- if .Values.backup.persistence.blockCache.enabled  }}
               - name: backup-cache
                 mountPath: /root/.cache/borg
                 subPath: borg
-                readOnly: true
-              {{- end }}
-              {{- if .Values.backup.persistence.localRepo.enabled  }}
               - name: backup-local
                 mountPath:  /mnt/borgmatic
                 subPath: borgmatic
-                readOnly: true
-              {{- if (eq "keyfile" .Values.backup.repoEncryptionType) }}
+              {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
               - name: detached-key
                 mountPath: /run/secrets/detached-key
                 subPath: detached-key
                 readOnly: true
-              {{- end }}
               {{- end }}
             env:
               - name: PGPASSWORD
@@ -72,7 +71,7 @@ spec:
                     name: {{ include "netbox.postgresql.secret" . | quote }}
                     key: {{ include "netbox.postgresql.secretKey" . | quote }}
                     optional: false
-              {{- if (eq "repokey" .Values.backup.repoEncryptionType) }}
+              {{- if has .Values.backup.repoEncryptionType $requiredPassphrase}}
               - name: BORG_PASSPHRASE
                 valueFrom:
                   secretKeyRef:
@@ -111,7 +110,7 @@ spec:
               emptyDir: {}
               {{- end }}
             - name: reports
-              {{- if .Values.persistence.enabled }}
+              {{- if .Values.reportsPersistence.enabled }}
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "netbox.fullname" .)) }}
               {{- else }}
@@ -145,7 +144,7 @@ spec:
                 - key: sshKnownHosts
                   path: ssh-known-hosts
                 optional: true
-            {{- if (eq "keyfile" .Values.backup.repoEncryptionType) }}
+            {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
             - name: detached-key
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
