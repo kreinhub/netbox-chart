@@ -848,27 +848,30 @@ backup:
   config: |+
     location:
       source_directories:
-          - "/opt/netbox/netbox/media"
+        - /opt/netbox/netbox/media
       repositories: []
-          # - ssh://user@backupserver/./sourcehostname.borg
-          # - ssh://user@backupserver/./{fqdn}
-          # - /var/local/backups/local.borg    
-      storage:
-          compression: lz4
-          archive_name_format: 'backup-{now}'
-      retention:
-          keep_hourly: 0
-          keep_daily: 7
-          keep_weekly: 4
-          keep_monthly: 12
-          keep_yearly: 1
-          prefix: 'backup-'
+        # - ssh://user@backupserver/./sourcehostname.borg
+        # - ssh://user@backupserver/./{fqdn}
+        # - /var/local/backups/local.borg
+      exclude_if_present: []
+        # - .nobackup
+    storage:
+      compression: lz4
+      archive_name_format: 'backup-{now}'
+    retention:
+      keep_hourly: 0
+      keep_daily: 7
+      keep_weekly: 4
+      keep_monthly: 12
+      keep_yearly: 1
+      prefix: 'backup-'
     consistency:
-        checks:
-            - repository
-            - archives
-        check_last: 3
-        prefix: 'backup-'
+      checks:
+        - name: repository
+        - name: archives
+        frequency: 2 weeks
+      check_last: 3
+      prefix: 'backup-'
     hooks:
       postgresql_databases:
         {{- if .Values.postgresql.enabled }}
