@@ -52,27 +52,27 @@ data:
     fi
 
     # Check if the repo actually exists:
-    if /usr/bin/borgmatic check --only repository -v 0 ; then
+    if /usr/local/bin/borgmatic check --only repository -v 0 ; then
         echo "Repository found!"
     else
         if [ "${BORG_INIT_IF_NOT_EXISTS}" = 'true' ]; then
-            /usr/bin/borgmatic init --encryption "${BORG_INIT_ENCRYPTION}"
+            /usr/local/bin/borgmatic init --encryption "${BORG_INIT_ENCRYPTION}"
         else
             diecat <<EOF
     Couldn't find or check the repository. Does it exist?
     If not, create the repo first:
-        /usr/bin/borgmatic init --encryption {repokey|keyfile}[-blake2]
+        /usr/local/bin/borgmatic init --encryption {repokey|keyfile}[-blake2]
     Then start the image manually and run:
-        /usr/bin/borgmatic create --progress --stats
+        /usr/local/bin/borgmatic create --progress --stats
     to initialize it.
     If you're sure it exists and should be available, run:
-        /usr/bin/borgmatic check --progress [--repair]
+        /usr/local/bin/borgmatic check --progress [--repair]
 
     CAUTION: Do not run "--repair" unless you know what you're doing!
     EOF
         fi
     fi
 
-    /usr/bin/borgmatic --stats -v 0
+    /usr/local/bin/borgmatic --stats -v 0
     
 {{- end }}
