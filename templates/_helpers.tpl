@@ -252,16 +252,16 @@ location:
     - "/mnt/borgmatic"
     {{- end -}}
     {{- if .Values.backup.remoteRepos -}}
-    {{-   range .Values.backup.remoteRepos -}}
+    {{- range .Values.backup.remoteRepos }}
     - {{ . | quote }}
-    {{-   end -}}
     {{- end -}}
-{{- omit (default dict "" "" .Values.backup.config.location) "source_directories" "repositories" | toYaml | indent 2 -}}
+    {{- end -}}
+{{ omit (default dict "" "" .Values.backup.config.location) "source_directories" "repositories" | toYaml | indent 2 }}
 
-{{- omit (default dict "" "" .Values.backup.config) "location" "hooks" | toYaml -}}
+{{ omit (default dict "" "" .Values.backup.config) "location" "hooks" | toYaml }}
 
 hooks:
-{{- omit (default dict "" "" .Values.backup.config.hooks) "postgresql_databases" | toYaml | indent 2 -}}
+{{ omit (default dict "" "" .Values.backup.config.hooks) "postgresql_databases" | toYaml | indent 2 }}
   postgresql_databases:
     {{- if .Values.postgresql.enabled }}
     - name: {{ .Values.postgresql.postgresqlDatabase | quote }}
