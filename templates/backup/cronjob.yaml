@@ -22,7 +22,7 @@ spec:
           - name: "borgmatic"
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
             imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
-            command: ["/usr/local/bin/borgmatic-start.sh"]
+            command: ["/bin/ash", "/usr/local/bin/borgmatic-start.sh"]
             volumeMounts:
               {{- if .Values.reportsPersistence.enabled }}
               - name: reports
@@ -39,19 +39,23 @@ spec:
               - name: script
                 mountPath: /usr/local/bin/borgmatic-start.sh
                 subPath: borgmatic-start.sh
-                readOnly: true
+                mode: 0644
               - name: config
                 mountPath: /etc/borgmatic.d/config.yaml
                 subPath: config.yaml
                 readOnly: true
+              {{- if .Values.backup.sshKey }}
               - name: ssh-key
                 mountPath: /run/secrets/ssh-key
                 subPath: ssh-key
                 readOnly: true
+              {{- end }}
+              {{- if .Values.backup.sshKnownHosts }}
               - name: ssh-known-hosts
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
                 readOnly: true
+              {{- end }}
               - name: backup-cache
                 mountPath: /root/.cache/borg
                 subPath: borg
@@ -130,6 +134,7 @@ spec:
               {{- else }}
               emptyDir: {}
               {{- end }}
+            {{- if .Values.backup.sshKey }}
             - name: ssh-key
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
@@ -137,6 +142,8 @@ spec:
                 - key: sshKey
                   path: ssh-key
                 optional: true
+            {{- end }}
+            {{- if .Values.backup.sshKnownHosts }}
             - name: ssh-known-hosts
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
@@ -144,6 +151,7 @@ spec:
                 - key: sshKnownHosts
                   path: ssh-known-hosts
                 optional: true
+            {{- end }}
             {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
             - name: detached-key
               secret:
