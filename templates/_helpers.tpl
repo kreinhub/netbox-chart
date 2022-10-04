@@ -232,3 +232,48 @@ Usage:
     {{ . }}
   {{- end -}}
 {{- end -}}
+
+{{/*
+Renders a value that contains a config for borgmatic CronJob pod.
+Usage:
+{{ include "netbox.backup.config" }}
+*/}}
+{{- define "netbox.backup.config" -}}
+location:
+  source_directories:
+    {{- if .Values.persistence.enabled -}}
+    - "/opt/netbox/netbox/media"
+    {{- end -}}
+    {{- if .Values.reportsPersistence.enabled -}}
+    - "/opt/netbox/netbox/reports"
+    {{- end -}}
+  repositories:
+    {{- if .Values.backup.persistence.localRepo.enabled -}}
+    - "/mnt/borgmatic"
+    {{- end -}}
+    {{- if .Values.backup.remoteRepos -}}
+    {{-   range .Values.backup.remoteRepos -}}
+    - {{ . | quote }}
+    {{-   end -}}
+    {{- end -}}
+{{- omit (default {} .Values.backup.config.location) "source_directories" "repositories" | toYaml | indent 2 -}}
+
+{{- omit (default {} .Values.backup.config) "location" "hooks" | toYaml -}}
+
+hooks:
+{{- omit (default {} .Values.backup.config.hooks) "postgresql_databases" | toYaml | indent 2 -}}
+  postgresql_databases:
+    {{- if .Values.postgresql.enabled }}
+    - name: {{ .Values.postgresql.postgresqlDatabase | quote }}
+      hostname: {{ include "netbox.postgresql.fullname" . | quote }}
+      port: {{ .Values.postgresql.service.port | int }}
+      username: {{ .Values.postgresql.postgresqlUsername | quote }}
+    {{- else -}}
+    - name: {{ .Values.externalDatabase.database | quote }}
+      hostname: {{ .Values.externalDatabase.host | quote }}
+      port: {{ .Values.externalDatabase.port | int }}
+      username: {{ .Values.externalDatabase.username | quote }}
+    {{- end }}
+      password: ${PGPASSWORD}
+      format: tar
+{{- end -}}
