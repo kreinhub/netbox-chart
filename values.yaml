@@ -845,23 +845,26 @@ backup:
   sshKey: ""
   sshKnownHosts: []
   borgPassphrase: ""
-  config: 
-    location:
-      storage:
-        compression: lz4
-        archive_name_format: 'backup-{now}'
-      retention:
-        keep_hourly: 0
-        keep_daily: 7
-        keep_weekly: 4
-        keep_monthly: 12
-        keep_yearly: 1
-        prefix: 'backup-'
+  remoteRepos: []
+    # - ssh://user@backupserver/./sourcehostname.borg
+    # - ssh://user@backupserver/./{fqdn}
+    # - /var/local/backups/local.b
+  config:
+    storage:
+      compression: lz4
+      archive_name_format: 'backup-{now}'
+    retention:
+      keep_hourly: 0
+      keep_daily: 7
+      keep_weekly: 4
+      keep_monthly: 12
+      keep_yearly: 1
+      prefix: 'backup-'
     consistency:
       checks:
         - name: repository
         - name: archives
-        frequency: 2 weeks
-        check_last: 3
-        prefix: 'backup-'
-        
+          frequency: 2 weeks
+      check_last: 3
+      prefix: 'backup-'
+

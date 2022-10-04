@@ -225,9 +225,9 @@ Usage:
 {{/*
 Renders a list of ssh known hosts to a string
 Usage:
-{{ include "netbox.knownhosts.render ." | b64enc | quote }}
+{{ include "netbox.backup.knownhosts" . | b64enc | quote }}
 */}}
-{{- define "netbox.knownhosts.render" -}}
+{{- define "netbox.backup.knownhosts" -}}
   {{- range .Values.backup.sshKnownHosts -}}
     {{ . }}
   {{- end -}}
@@ -236,7 +236,7 @@ Usage:
 {{/*
 Renders a value that contains a config for borgmatic CronJob pod.
 Usage:
-{{ include "netbox.backup.config" }}
+{{ include "netbox.backup.config" . }}
 */}}
 {{- define "netbox.backup.config" -}}
 location:
@@ -256,12 +256,12 @@ location:
     - {{ . | quote }}
     {{-   end -}}
     {{- end -}}
-{{- omit (default {} .Values.backup.config.location) "source_directories" "repositories" | toYaml | indent 2 -}}
+{{- omit (default dict "" "" .Values.backup.config.location) "source_directories" "repositories" | toYaml | indent 2 -}}
 
-{{- omit (default {} .Values.backup.config) "location" "hooks" | toYaml -}}
+{{- omit (default dict "" "" .Values.backup.config) "location" "hooks" | toYaml -}}
 
 hooks:
-{{- omit (default {} .Values.backup.config.hooks) "postgresql_databases" | toYaml | indent 2 -}}
+{{- omit (default dict "" "" .Values.backup.config.hooks) "postgresql_databases" | toYaml | indent 2 -}}
   postgresql_databases:
     {{- if .Values.postgresql.enabled }}
     - name: {{ .Values.postgresql.postgresqlDatabase | quote }}
@@ -277,3 +277,4 @@ hooks:
       password: ${PGPASSWORD}
       format: tar
 {{- end -}}
+
