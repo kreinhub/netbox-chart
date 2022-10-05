@@ -63,5 +63,5 @@ hooks:
       format: tar
 {{- if .Values.backup.config.hooks }}
 {{ omit .Values.backup.config.hooks "postgresql_databases" | toYaml | indent 2 }}
-{{ end -}}
+{{- end }}
 {{ end }}

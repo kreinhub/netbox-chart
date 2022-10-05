@@ -12,18 +12,40 @@ metadata:
   labels:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
-  schedule: {{ required "Cron schedule is required" .Values.backup.cronSchedule | quote }}
+  schedule: {{ required "(.Values.backup.cronSchedule) Cron schedule is required" .Values.backup.cronSchedule | quote }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
         spec:
+          restartPolicy: {{ .Values.backup.restartPolicy }}
+          hostname: {{ include "netbox.fullname" . }}-backup
           containers:
           - name: "borgmatic"
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
             imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
-            command: ["/bin/ash", "/usr/local/bin/borgmatic-start.sh"]
+            command: ["/usr/local/bin/borgmatic-start.sh"]
             volumeMounts:
+              - name: config
+                mountPath: /etc/borgmatic.d/config.yaml
+                subPath: config.yaml
+                readOnly: true
+              - name: script
+                mountPath: /usr/local/bin/borgmatic-start.sh
+                subPath: borgmatic-start.sh
+                readOnly: true
+              - name: backup-cache
+                mountPath: /root/.cache/borg
+                {{- if and .Values.backup.persistence.blockCache.enabled .Values.backup.persistence.blockCache.subPath }}
+                subPath: {{ .Values.persistence.blockCache.subPath | default "" | quote }}
+                {{- end }}
+                readOnly: false
+              {{- if .Values.backup.persistence.localRepo.enabled }}
+              - name: backup-local
+                mountPath: /mnt/borgmatic
+                subPath: {{ .Values.persistence.localRepo.subPath | default "" | quote }}
+                readOnly: false
+              {{- end }}
               {{- if .Values.reportsPersistence.enabled }}
               - name: reports
                 mountPath: /opt/netbox/netbox/reports
@@ -36,32 +58,18 @@ spec:
                 subPath: {{ .Values.persistence.subPath | default "" | quote }}
                 readOnly: true
               {{- end }}
-              - name: script
-                mountPath: /usr/local/bin/borgmatic-start.sh
-                subPath: borgmatic-start.sh
-                mode: 0644
-              - name: config
-                mountPath: /etc/borgmatic.d/config.yaml
-                subPath: config.yaml
-                readOnly: true
-              {{- if .Values.backup.sshKey }}
+              {{- if and .Values.backup.remoteRepos .Values.backup.sshKey }}
               - name: ssh-key
                 mountPath: /run/secrets/ssh-key
                 subPath: ssh-key
                 readOnly: true
               {{- end }}
-              {{- if .Values.backup.sshKnownHosts }}
+              {{- if .Values.backup.remoteRepos .Values.backup.sshKnownHosts }}
               - name: ssh-known-hosts
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
                 readOnly: true
               {{- end }}
-              - name: backup-cache
-                mountPath: /root/.cache/borg
-                subPath: borg
-              - name: backup-local
-                mountPath:  /mnt/borgmatic
-                subPath: borgmatic
               {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
               - name: detached-key
                 mountPath: /run/secrets/detached-key
@@ -100,50 +108,50 @@ spec:
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
-                - key: config.yaml
-                  path: config.yaml
+                  - key: config
+                    path: config.yaml
                 optional: false
             - name: script
               configMap:
                 name: {{ include "netbox.fullname" . }}-backup-script
-              {{- if .Values.persistence.enabled }}
+                items:
+                  - key: borgmatic-start.sh
+                    path: borgmatic-start.sh
+                    mode: 0755
+                optional: false
+            {{- if .Values.persistence.enabled }}
             - name: media
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-media" (include "netbox.fullname" .)) }}
-              {{- else }}
-              emptyDir: {}
-              {{- end }}
+            {{- end }}
+            {{- if .Values.reportsPersistence.enabled }}
             - name: reports
-              {{- if .Values.reportsPersistence.enabled }}
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "netbox.fullname" .)) }}
-              {{- else }}
-              emptyDir: {}
-              {{- end }}
-              {{- if .Values.backup.persistence.blockCache.enabled }}
+            {{- end }}
             - name: backup-cache
+              {{- if .Values.backup.persistence.blockCache.enabled }}
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-cache" (include "netbox.fullname" .)) }}
               {{- else }}
               emptyDir: {}
               {{- end }}
-              {{- if .Values.backup.persistence.localRepo.enabled }}
+            {{- if .Values.backup.persistence.localRepo.enabled }}
             - name: backup-local
               persistentVolumeClaim:
                 claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-local" (include "netbox.fullname" .)) }}
-              {{- else }}
-              emptyDir: {}
-              {{- end }}
-            {{- if .Values.backup.sshKey }}
+            {{- end }}
+            {{- if .Values.backup.remoteRepos }}
+            {{-   if .Values.backup.sshKey }}
             - name: ssh-key
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
                 items:
                 - key: sshKey
                   path: ssh-key
-                optional: true
-            {{- end }}
-            {{- if .Values.backup.sshKnownHosts }}
+                optional: false
+            {{-   end }}
+            {{-   if .Values.backup.sshKnownHosts }}
             - name: ssh-known-hosts
               secret:
                 secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
@@ -151,6 +159,7 @@ spec:
                 - key: sshKnownHosts
                   path: ssh-known-hosts
                 optional: true
+            {{-   end }}
             {{- end }}
             {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
             - name: detached-key
@@ -161,5 +170,4 @@ spec:
                   path: detached-key
                 optional: false
             {{- end }}
-          restartPolicy: {{ .Values.backup.restartPolicy }}
 {{- end }}

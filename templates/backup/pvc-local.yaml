@@ -25,4 +25,4 @@ spec:
 {{- if .Values.backup.persistence.localRepo.selector }}
   selector: {{ toYaml .Values.backup.persistence.localRepo.selector | nindent 4 }}
 {{- end }}
-{{- end -}}
+{{- end }}
