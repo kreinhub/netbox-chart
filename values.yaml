@@ -815,40 +815,80 @@ worker:
   #    image: busybox
   #    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
 
+## If you want to back up your netbox installation automatically,
+#  you can do so here.
 backup:
+  ## Setting this to `true` will create a CronJob that will spawn
+  #  a `borgmatic` pod that will back up the NetBox DB and other data.
   enabled: false
+  image:
+    name: "b3vis/borgmatic"
+    tag: "1.7"
+    pullPolicy: IfNotPresent
+  ## Set up your desired backup schedule here. Cron notation is required.
+  #
+  #  For example, you may want to use "30 7 * * 1" to create a backup
+  #  at 7:30 AM every Monday.
+  #
+  #  See https://devhints.io/cron for a handy explanation of how cron works.
+  cronSchedule: ""
+  restartPolicy: OnFailure
+
   persistence:
+    ## Set this up if you want to use a local backup feature.
     localRepo:
       enabled: false
       existingClaim: ""
       subPath: ""
       storageClass: ""
       accessMode: ReadWriteOnce
-      size: ""
+      size: 32Gi
+    ## Set this up if you want to use a persistent block checksum cache.
+    #  (it is useful for block deduplication, which will save you a lot of space)
     blockCache:
       enabled: false
       existingClaim: ""
       subPath: ""
       storageClass: ""
       accessMode: ReadWriteOnce
-      size: ""
+      size: 1Gi
+
+  ## You may want to use a self-provided secret instead of specifying
+  #  all options here in chart values. Set the secret name here if you do.
+  #
+  #  See all values below for a list of required fields.
   existingConfigSecret: ""
-  image:
-    name: "b3vis/borgmatic"
-    tag: "1.7"
-    pullPolicy: IfNotPresent
-  cronSchedule: ""
-  restartPolicy: OnFailure
-  allowRepoCreation: "false"  # it should be a string
-  repoEncryptionType: ""      # possible options: none, authenticated[-blake2], keyfile[-blake2], repokey[-blake2]
-  detachedKey: ""
-  sshKey: ""
-  sshKnownHosts: []
+  ## Allow to create a repo if it's not found.
+  #  You may want to set this to 'true' when enabling the backup feature
+  #  for the first time. Must be a string.
+  allowRepoCreation: "false"
+  ## Select an encryption type to use for your backups:
+  #  * `none` will create an unencrypted repo without checksums. Not recommended.
+  #  * `authenticated` will create an unencrypted repo with hash checks.
+  #  * `repokey` will store a passphrase-encrypted keyfile inside the repo.
+  #  * `keyfile` will use a detached key file that you may want to hide.
+  #
+  #  `authenticated` and `repokey` types require a passphrase,
+  #  while `keyfile` requires a key file that you have to create beforehand.
+  #
+  #  You may want to add `-blake2` to use BLAKE2 hash instead of SHA256.
+  repoEncryptionType: ""
+  ## Passphrase for the repo to use in `authenticated` and `repokey` modes.
   borgPassphrase: ""
+  ## A base64-encoded key file for repo to use in `keyfile[-blake2]` mode.
+  detachedKey: ""
+
+  ## Remote repos to backup to:
   remoteRepos: []
     # - ssh://user@backupserver/./sourcehostname.borg
     # - ssh://user@backupserver/./{fqdn}
-    # - /var/local/backups/local.b
+  ## A base64-encoded SSH private key to access remote destinations.
+  sshKey: ""
+  ## List of known hosts to compare remote servers' public keys to. Optional.
+  sshKnownHosts: []
+  # - example.com ssh-ed25519 AAAAC3Nza<...>
+
+  ## Additional options for Borgmatic. Some sane defaults are included here:
   config:
     storage:
       compression: zstd,6
