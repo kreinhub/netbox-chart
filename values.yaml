@@ -893,6 +893,8 @@ backup:
     storage:
       compression: zstd,6
       archive_name_format: '{hostname}-{now:%Y-%m-%dT%H:%M:%S.%f}'
+      relocated_repo_access_is_ok: false
+      unknown_unencrypted_repo_access_is_ok: false
     retention:
       keep_hourly: 0
       keep_daily: 7
