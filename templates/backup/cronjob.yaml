@@ -12,17 +12,18 @@ metadata:
   labels:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
-  schedule: {{ required "Cron schedule is required" .Values.backup.cronSchedule | quote }}
+  schedule: {{ required "(.Values.backup.cronSchedule) Cron schedule is required" .Values.backup.cronSchedule | quote }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
         spec:
+          restartPolicy: {{ .Values.backup.restartPolicy }}
           containers:
           - name: "borgmatic"
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
             imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
-            command: ["/bin/ash", "/usr/local/bin/borgmatic-start.sh"]
+            command: ["/usr/local/bin/borgmatic-start.sh"]
             volumeMounts:
               {{- if .Values.reportsPersistence.enabled }}
               - name: reports
@@ -161,5 +162,4 @@ spec:
                   path: detached-key
                 optional: false
             {{- end }}
-          restartPolicy: {{ .Values.backup.restartPolicy }}
 {{- end }}

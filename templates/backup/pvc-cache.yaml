@@ -25,4 +25,4 @@ spec:
 {{- if .Values.backup.persistence.blockCache.selector }}
   selector: {{ toYaml .Values.backup.persistence.blockCache.selector | nindent 4 }}
 {{- end }}
-{{- end -}}
+{{- end }}

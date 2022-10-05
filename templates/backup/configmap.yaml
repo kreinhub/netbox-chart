@@ -10,7 +10,7 @@ metadata:
   labels:
 {{ include "netbox.labels" . | indent 4 }}
 data:
-  borgmatic-start.sh: |
+  borgmatic-start.sh: |+
     #!/usr/bin/env ash
     set -euo pipefail
 
@@ -74,5 +74,5 @@ data:
     fi
 
     /usr/local/bin/borgmatic --stats -v 0
-    
+
 {{- end }}
