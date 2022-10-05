@@ -33,7 +33,7 @@ location:
     {{ end -}}
     {{ if .Values.reportsPersistence.enabled -}}
     - "/opt/netbox/netbox/reports"
-    {{ end -}}
+    {{ end }}
   repositories:
     {{- range $repos }}
     - {{ . | quote }}
