@@ -833,10 +833,10 @@ backup:
       accessMode: ReadWriteOnce
       size: ""
   existingConfigSecret: ""
-  image: 
+  image:
     name: "b3vis/borgmatic"
-    tag: "latest"
-    pullPolicy: IfNotPresent 
+    tag: "1.7"
+    pullPolicy: IfNotPresent
   cronSchedule: ""
   restartPolicy: OnFailure
   allowRepoCreation: "false"  # it should be a string
