@@ -19,6 +19,7 @@ spec:
       template:
         spec:
           restartPolicy: {{ .Values.backup.restartPolicy }}
+          hostname: {{ include "netbox.fullname" . }}-backup
           containers:
           - name: "borgmatic"
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
