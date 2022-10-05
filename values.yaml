@@ -833,10 +833,10 @@ backup:
       accessMode: ReadWriteOnce
       size: ""
   existingConfigSecret: ""
-  image: 
+  image:
     name: "b3vis/borgmatic"
-    tag: "latest"
-    pullPolicy: IfNotPresent 
+    tag: "1.7"
+    pullPolicy: IfNotPresent
   cronSchedule: ""
   restartPolicy: OnFailure
   allowRepoCreation: "false"  # it should be a string
@@ -851,20 +851,21 @@ backup:
     # - /var/local/backups/local.b
   config:
     storage:
-      compression: lz4
-      archive_name_format: 'backup-{now}'
+      compression: zstd,6
+      archive_name_format: 'netbox-backup-{now:%Y-%m-%dT%H:%M:%S.%f}'
     retention:
       keep_hourly: 0
       keep_daily: 7
       keep_weekly: 4
       keep_monthly: 12
       keep_yearly: 1
-      prefix: 'backup-'
+      prefix: 'netbox-backup-'
     consistency:
       checks:
         - name: repository
         - name: archives
-          frequency: 2 weeks
+          frequency: 1 week
+        - name: extract
+          frequency: 1 month
       check_last: 3
-      prefix: 'backup-'
-
+      prefix: 'netbox-backup-'
