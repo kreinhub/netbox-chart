@@ -37,13 +37,13 @@ spec:
               - name: backup-cache
                 mountPath: /root/.cache/borg
                 {{- if and .Values.backup.persistence.blockCache.enabled .Values.backup.persistence.blockCache.subPath }}
-                subPath: {{ .Values.persistence.blockCache.subPath | default "" | quote }}
+                subPath: {{ .Values.backup.persistence.blockCache.subPath | default "" | quote }}
                 {{- end }}
                 readOnly: false
               {{- if .Values.backup.persistence.localRepo.enabled }}
               - name: backup-local
                 mountPath: /mnt/borgmatic
-                subPath: {{ .Values.persistence.localRepo.subPath | default "" | quote }}
+                subPath: {{ .Values.backup.persistence.localRepo.subPath | default "" | quote }}
                 readOnly: false
               {{- end }}
               {{- if .Values.reportsPersistence.enabled }}
@@ -64,7 +64,7 @@ spec:
                 subPath: ssh-key
                 readOnly: true
               {{- end }}
-              {{- if .Values.backup.remoteRepos .Values.backup.sshKnownHosts }}
+              {{- if and .Values.backup.remoteRepos .Values.backup.sshKnownHosts }}
               - name: ssh-known-hosts
                 mountPath: /run/secrets/ssh-known-hosts
                 subPath: ssh-known-hosts
