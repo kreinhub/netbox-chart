@@ -18,7 +18,7 @@ Usage:
 {{- define "netbox.backup.config" -}}
 {{- $repos := list -}}
 {{- if .Values.backup.persistence.localRepo.enabled -}}
-{{-   $repos = append $repos "/mnt/borgmatic" -}}
+{{-   $repos = append $repos "/mnt/borgmatic/netbox-backup" -}}
 {{- end -}}
 {{- if .Values.backup.remoteRepos -}}
 {{-   $repos = concat $repos .Values.backup.remoteRepos -}}

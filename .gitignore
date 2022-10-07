@@ -2,3 +2,4 @@
 .*.swp
 Chart.lock
 requirements.lock
+templates/backup/borgmatic.yaml
