@@ -888,6 +888,10 @@ backup:
   sshKnownHosts: []
   # - example.com ssh-ed25519 AAAAC3Nza<...>
 
+  ## Restoring config
+  restoreBackupName: ""
+  # e.g. "host-2019-01-01T04:05:06.070809" for exact backup or "latest" for latest one
+
   ## Additional options for Borgmatic. Some sane defaults are included here:
   config:
     storage:
