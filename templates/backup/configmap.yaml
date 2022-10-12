@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "netbox.fullname" . }}-backup-script
+  name: {{ include "netbox.fullname" . }}-backup-scripts
   {{- with .Values.commonAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -75,4 +75,61 @@ data:
 
     /usr/local/bin/borgmatic --stats -v 0
 
+{{- end }}
+  borgmatic-restore.sh: |+
+    #!/usr/bin/env ash
+    set -euo pipefail
+
+    export PATH="/usr/bin:${PATH}"
+
+    die() {
+        echo "${@}" >&2
+        exit 1
+    }
+
+    diecat() {
+        cat >&2
+        exit 1
+    }
+
+    # Check if config file exists:
+    [ -r /etc/borgmatic.d/config.yaml ] || die "Unable to load the config! Exiting."
+
+    # Check if some keys are passed as Docker secrets:
+    if [ -r /run/secrets/ssh-key ]; then
+        echo "Docker secret with an SSH private key found!"
+        SSH_KEYTYPE="$(ssh-keygen -lf /run/secrets/ssh-key | awk 'a = gensub(/[\(\)]/, "", "g", $NF) {print tolower(a)}')"
+        echo "The SSH key type is: \"${SSH_KEYTYPE}\""
+        cp -v /run/secrets/ssh-key "/root/.ssh/id_${SSH_KEYTYPE}"
+        chown -v root:root "/root/.ssh/id_${SSH_KEYTYPE}"
+        chmod -v 0600 "/root/.ssh/id_${SSH_KEYTYPE}"
+    fi
+    if [ -r /run/secrets/ssh-known-hosts ]; then
+        echo "Docker secret with an SSH known host keys found!"
+        cp -v /run/secrets/ssh-known-hosts /root/.ssh/known_hosts
+        chown -v root:root /root/.ssh/known_hosts
+        chmod -v 0600 /root/.ssh/known_hosts
+    fi
+    if [ -r /run/secrets/detached-key ]; then
+        echo "Docker secret with a Borg repo key found!"
+        cp /run/secrets/detached-key /root/.config/borg/keyfile
+        chown root:root /root/.config/borg/keyfile
+        chmod 0600 /root/.config/borg/keyfile
+    fi
+
+    # Check if the repo actually exists:
+    if /usr/local/bin/borgmatic check --only repository -v 0 ; then
+        echo "Repository found!"
+    else
+        diecat <<EOF
+    Couldn't find or check the repository.
+    Restoring is not possible
+    EOF
+    fi
+    
+    if [[ ${BACKUP_NAME} ]]; then
+        borgmatic restore --archive ${BACKUP_NAME}
+    else
+        borgmatic rlist
+    fi
 {{- end }}
