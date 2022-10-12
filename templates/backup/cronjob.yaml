@@ -30,7 +30,7 @@ spec:
                 mountPath: /etc/borgmatic.d/config.yaml
                 subPath: config.yaml
                 readOnly: true
-              - name: script
+              - name: start-script
                 mountPath: /usr/local/bin/borgmatic-start.sh
                 subPath: borgmatic-start.sh
                 readOnly: true
@@ -111,9 +111,9 @@ spec:
                   - key: config
                     path: config.yaml
                 optional: false
-            - name: script
+            - name: start-script
               configMap:
-                name: {{ include "netbox.fullname" . }}-backup-script
+                name: {{ include "netbox.fullname" . }}-backup-scripts
                 items:
                   - key: borgmatic-start.sh
                     path: borgmatic-start.sh
