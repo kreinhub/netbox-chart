@@ -75,7 +75,6 @@ data:
 
     /usr/local/bin/borgmatic --stats -v 0
 
-{{- end }}
   borgmatic-restore.sh: |+
     #!/usr/bin/env ash
     set -euo pipefail
