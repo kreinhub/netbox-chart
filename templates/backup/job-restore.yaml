@@ -13,155 +13,152 @@ metadata:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
   suspend: true
-  concurrencyPolicy: Forbid
-  jobTemplate:
+  template:
     spec:
-      template:
-        spec:
-          restartPolicy: {{ .Values.backup.restartPolicy }}
-          hostname: {{ include "netbox.fullname" . }}-backup-restore
-          containers:
-          - name: "borgmatic-restore"
-            image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
-            imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
-            command: ["/usr/local/bin/borgmatic-restore.sh"]
-            volumeMounts:
-              - name: config
-                mountPath: /etc/borgmatic.d/config.yaml
-                subPath: config.yaml
-                readOnly: true
-              - name: restore-script
-                mountPath: /usr/local/bin/borgmatic-restore.sh
-                subPath: borgmatic-restore.sh
-                readOnly: true
-              - name: backup-cache
-                mountPath: /root/.cache/borg
-                {{- if and .Values.backup.persistence.blockCache.enabled .Values.backup.persistence.blockCache.subPath }}
-                subPath: {{ .Values.backup.persistence.blockCache.subPath | default "" | quote }}
-                {{- end }}
-                readOnly: false
-              {{- if .Values.backup.persistence.localRepo.enabled }}
-              - name: backup-local
-                mountPath: /mnt/borgmatic
-                subPath: {{ .Values.backup.persistence.localRepo.subPath | default "" | quote }}
-                readOnly: false
-              {{- end }}
-              {{- if .Values.reportsPersistence.enabled }}
-              - name: reports
-                mountPath: /opt/netbox/netbox/reports
-                subPath: {{ .Values.reportsPersistence.subPath | default "" | quote }}
-                readOnly: true
-              {{- end }}
-              {{- if .Values.persistence.enabled }}
-              - name: media
-                mountPath: /opt/netbox/netbox/media
-                subPath: {{ .Values.persistence.subPath | default "" | quote }}
-                readOnly: true
-              {{- end }}
-              {{- if and .Values.backup.remoteRepos .Values.backup.sshKey }}
-              - name: ssh-key
-                mountPath: /run/secrets/ssh-key
-                subPath: ssh-key
-                readOnly: true
-              {{- end }}
-              {{- if and .Values.backup.remoteRepos .Values.backup.sshKnownHosts }}
-              - name: ssh-known-hosts
-                mountPath: /run/secrets/ssh-known-hosts
-                subPath: ssh-known-hosts
-                readOnly: true
-              {{- end }}
-              {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
-              - name: detached-key
-                mountPath: /run/secrets/detached-key
-                subPath: detached-key
-                readOnly: true
-              {{- end }}
-            env:
-              - name: PGPASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: {{ include "netbox.postgresql.secret" . | quote }}
-                    key: {{ include "netbox.postgresql.secretKey" . | quote }}
-                    optional: false
-              {{- if has .Values.backup.repoEncryptionType $requiredPassphrase}}
-              - name: BORG_PASSPHRASE
-                valueFrom:
-                  secretKeyRef:
-                    name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
-                    key: borgPassphrase
-                    optional: false
-              {{- end }}
-              - name: BACKUP_NAME
-                valueFrom:
-                  secretKeyRef:
-                    name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
-                    key: restoreBackupName
-                    optional: true
-          volumes:
-            - name: config
-              secret:
-                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
-                items:
-                  - key: config
-                    path: config.yaml
-                optional: false
-            - name: restore-script
-              configMap:
-                name: {{ include "netbox.fullname" . }}-backup-scripts
-                items:
-                  - key: borgmatic-restore.sh
-                    path: borgmatic-restore.sh
-                    mode: 0755
-                optional: false
-            {{- if .Values.persistence.enabled }}
-            - name: media
-              persistentVolumeClaim:
-                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-media" (include "netbox.fullname" .)) }}
+      restartPolicy: {{ .Values.backup.restartPolicy }}
+      hostname: {{ include "netbox.fullname" . }}-backup-restore
+      containers:
+      - name: "borgmatic-restore"
+        image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
+        imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+        command: ["/usr/local/bin/borgmatic-restore.sh"]
+        volumeMounts:
+          - name: config
+            mountPath: /etc/borgmatic.d/config.yaml
+            subPath: config.yaml
+            readOnly: true
+          - name: restore-script
+            mountPath: /usr/local/bin/borgmatic-restore.sh
+            subPath: borgmatic-restore.sh
+            readOnly: true
+          - name: backup-cache
+            mountPath: /root/.cache/borg
+            {{- if and .Values.backup.persistence.blockCache.enabled .Values.backup.persistence.blockCache.subPath }}
+            subPath: {{ .Values.backup.persistence.blockCache.subPath | default "" | quote }}
             {{- end }}
-            {{- if .Values.reportsPersistence.enabled }}
-            - name: reports
-              persistentVolumeClaim:
-                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "netbox.fullname" .)) }}
-            {{- end }}
-            - name: backup-cache
-              {{- if .Values.backup.persistence.blockCache.enabled }}
-              persistentVolumeClaim:
-                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-cache" (include "netbox.fullname" .)) }}
-              {{- else }}
-              emptyDir: {}
-              {{- end }}
-            {{- if .Values.backup.persistence.localRepo.enabled }}
-            - name: backup-local
-              persistentVolumeClaim:
-                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-local" (include "netbox.fullname" .)) }}
-            {{- end }}
-            {{- if .Values.backup.remoteRepos }}
-            {{-   if .Values.backup.sshKey }}
-            - name: ssh-key
-              secret:
-                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
-                items:
-                - key: sshKey
-                  path: ssh-key
+            readOnly: false
+          {{- if .Values.backup.persistence.localRepo.enabled }}
+          - name: backup-local
+            mountPath: /mnt/borgmatic
+            subPath: {{ .Values.backup.persistence.localRepo.subPath | default "" | quote }}
+            readOnly: false
+          {{- end }}
+          {{- if .Values.reportsPersistence.enabled }}
+          - name: reports
+            mountPath: /opt/netbox/netbox/reports
+            subPath: {{ .Values.reportsPersistence.subPath | default "" | quote }}
+            readOnly: true
+          {{- end }}
+          {{- if .Values.persistence.enabled }}
+          - name: media
+            mountPath: /opt/netbox/netbox/media
+            subPath: {{ .Values.persistence.subPath | default "" | quote }}
+            readOnly: true
+          {{- end }}
+          {{- if and .Values.backup.remoteRepos .Values.backup.sshKey }}
+          - name: ssh-key
+            mountPath: /run/secrets/ssh-key
+            subPath: ssh-key
+            readOnly: true
+          {{- end }}
+          {{- if and .Values.backup.remoteRepos .Values.backup.sshKnownHosts }}
+          - name: ssh-known-hosts
+            mountPath: /run/secrets/ssh-known-hosts
+            subPath: ssh-known-hosts
+            readOnly: true
+          {{- end }}
+          {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
+          - name: detached-key
+            mountPath: /run/secrets/detached-key
+            subPath: detached-key
+            readOnly: true
+          {{- end }}
+        env:
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "netbox.postgresql.secret" . | quote }}
+                key: {{ include "netbox.postgresql.secretKey" . | quote }}
                 optional: false
-            {{-   end }}
-            {{-   if .Values.backup.sshKnownHosts }}
-            - name: ssh-known-hosts
-              secret:
-                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
-                items:
-                - key: sshKnownHosts
-                  path: ssh-known-hosts
+          {{- if has .Values.backup.repoEncryptionType $requiredPassphrase}}
+          - name: BORG_PASSPHRASE
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                key: borgPassphrase
+                optional: false
+          {{- end }}
+          - name: BACKUP_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                key: restoreBackupName
                 optional: true
-            {{-   end }}
-            {{- end }}
-            {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
-            - name: detached-key
-              secret:
-                secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
-                items:
-                - key: detachedKey
-                  path: detached-key
-                optional: false
-            {{- end }}
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+            items:
+              - key: config
+                path: config.yaml
+            optional: false
+        - name: restore-script
+          configMap:
+            name: {{ include "netbox.fullname" . }}-backup-scripts
+            items:
+              - key: borgmatic-restore.sh
+                path: borgmatic-restore.sh
+                mode: 0755
+            optional: false
+        {{- if .Values.persistence.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-media" (include "netbox.fullname" .)) }}
+        {{- end }}
+        {{- if .Values.reportsPersistence.enabled }}
+        - name: reports
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "netbox.fullname" .)) }}
+        {{- end }}
+        - name: backup-cache
+          {{- if .Values.backup.persistence.blockCache.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-cache" (include "netbox.fullname" .)) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.backup.persistence.localRepo.enabled }}
+        - name: backup-local
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-backup-local" (include "netbox.fullname" .)) }}
+        {{- end }}
+        {{- if .Values.backup.remoteRepos }}
+        {{-   if .Values.backup.sshKey }}
+        - name: ssh-key
+          secret:
+            secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+            items:
+            - key: sshKey
+              path: ssh-key
+            optional: false
+        {{-   end }}
+        {{-   if .Values.backup.sshKnownHosts }}
+        - name: ssh-known-hosts
+          secret:
+            secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+            items:
+            - key: sshKnownHosts
+              path: ssh-known-hosts
+            optional: true
+        {{-   end }}
+        {{- end }}
+        {{- if has .Values.backup.repoEncryptionType $requiredDetachedKey }}
+        - name: detached-key
+          secret:
+            secretName: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+            items:
+            - key: detachedKey
+              path: detached-key
+            optional: false
+        {{- end }}
 {{- end }}
