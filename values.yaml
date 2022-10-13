@@ -858,6 +858,7 @@ backup:
   #
   #  See all values below for a list of required fields.
   existingConfigSecret: ""
+  existingConfigSecretRestore: ""
   ## Allow to create a repo if it's not found.
   #  You may want to set this to 'true' when enabling the backup feature
   #  for the first time. Must be a string.
@@ -887,10 +888,6 @@ backup:
   ## List of known hosts to compare remote servers' public keys to. Optional.
   sshKnownHosts: []
   # - example.com ssh-ed25519 AAAAC3Nza<...>
-
-  ## Restoring config
-  restoreBackupName: ""
-  # e.g. "host-2019-01-01T04:05:06.070809" for exact backup or "latest" for latest one
 
   ## Additional options for Borgmatic. Some sane defaults are included here:
   config:
