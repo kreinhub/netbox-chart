@@ -98,6 +98,12 @@ spec:
                     name: {{ .Values.backup.existingConfigSecretRestore | default (printf "%s-backup-secret-restore" (include "netbox.fullname" .)) }}
                     key: restoreBackupName
                     optional: true
+              - name: REPO_NAME
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.backup.existingConfigSecretRestore | default (printf "%s-backup-secret-restore" (include "netbox.fullname" .)) }}
+                    key: restoreRepoName
+                    optional: true
           volumes:
             - name: config
               secret:
