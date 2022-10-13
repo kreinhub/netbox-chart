@@ -126,15 +126,19 @@ data:
     EOF
     fi
     
-    BACKUP_NAME="netbox-release-backup-2022-10-13T12:36:23.967842"
-    REPO_NAME="ssh://bu_netbox@135.181.183.149/home/bu_netbox/netbox-backup"
     if [[ -n "${BACKUP_NAME}" ]]; then
-        if borgmatic list --short --repository "${REPO_NAME}" --archive "${BACKUP_NAME}" >/dev/null 2>&1; then
-            borgmatic restore --archive "${BACKUP_NAME}"
+        if [[ -n "${REPO_NAME}" ]]; then
+            if borgmatic list --short --repository "${REPO_NAME}" --archive "${BACKUP_NAME}" >/dev/null 2>&1; then
+                borgmatic restore --archive "${BACKUP_NAME}"
+            else
+                echo "Backup was not found! Restoring is not possible."
+                exit 1
+            fi
         else
-            echo "Backup was not found! Restoring is not possible."
-        fi
+            echo "restoreRepoName is required!"
+            exit 1
     else
-        borgmatic rlist --short --repository "${REPO_NAME}"
+        echo "Please specify restoreBackupName and restoreRepoName in secret to perform restore"
+        borgmatic rlist --short
     fi
 {{- end }}
