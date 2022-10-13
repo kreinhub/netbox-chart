@@ -95,7 +95,7 @@ spec:
               - name: BACKUP_NAME
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                    name: {{ .Values.backup.existingConfigSecretRestore | default (printf "%s-backup-secret-restore" (include "netbox.fullname" .)) }}
                     key: restoreBackupName
                     optional: true
           volumes:
