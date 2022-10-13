@@ -4,7 +4,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "netbox.fullname" . }}-backup
+  name: {{ include "netbox.fullname" . }}-backup-restore
   {{- with .Values.commonAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -12,27 +12,28 @@ metadata:
   labels:
 {{ include "netbox.labels" . | indent 4 }}
 spec:
-  schedule: {{ required "(.Values.backup.cronSchedule) Cron schedule is required" .Values.backup.cronSchedule | quote }}
+  suspend: true
+  schedule: "59 23 31 5 *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
         spec:
           restartPolicy: {{ .Values.backup.restartPolicy }}
-          hostname: {{ include "netbox.fullname" . }}-backup
+          hostname: {{ include "netbox.fullname" . }}-backup-restore
           containers:
-          - name: "borgmatic"
+          - name: "borgmatic-restore"
             image: "{{ .Values.backup.image.name }}:{{ .Values.backup.image.tag }}"
             imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
-            command: ["/usr/local/bin/borgmatic-start.sh"]
+            command: ["/usr/local/bin/borgmatic-restore.sh"]
             volumeMounts:
               - name: config
                 mountPath: /etc/borgmatic.d/config.yaml
                 subPath: config.yaml
                 readOnly: true
-              - name: start-script
-                mountPath: /usr/local/bin/borgmatic-start.sh
-                subPath: borgmatic-start.sh
+              - name: restore-script
+                mountPath: /usr/local/bin/borgmatic-restore.sh
+                subPath: borgmatic-restore.sh
                 readOnly: true
               - name: backup-cache
                 mountPath: /root/.cache/borg
@@ -91,18 +92,12 @@ spec:
                     key: borgPassphrase
                     optional: false
               {{- end }}
-              - name: BORG_INIT_IF_NOT_EXISTS
+              - name: BACKUP_NAME
                 valueFrom:
                   secretKeyRef:
-                    name: {{ include "netbox.fullname" . }}-backup-secret
-                    key: allowRepoCreation
-                    optional: false
-              - name: BORG_INIT_ENCRYPTION
-                valueFrom:
-                  secretKeyRef:
-                    name: {{ include "netbox.fullname" . }}-backup-secret
-                    key: repoEncryptionType
-                    optional: false
+                    name: {{ .Values.backup.existingConfigSecret | default (printf "%s-backup-secret" (include "netbox.fullname" .)) }}
+                    key: restoreBackupName
+                    optional: true
           volumes:
             - name: config
               secret:
@@ -111,12 +106,12 @@ spec:
                   - key: config
                     path: config.yaml
                 optional: false
-            - name: start-script
+            - name: restore-script
               configMap:
                 name: {{ include "netbox.fullname" . }}-backup-scripts
                 items:
-                  - key: borgmatic-start.sh
-                    path: borgmatic-start.sh
+                  - key: borgmatic-restore.sh
+                    path: borgmatic-restore.sh
                     mode: 0755
                 optional: false
             {{- if .Values.persistence.enabled }}
